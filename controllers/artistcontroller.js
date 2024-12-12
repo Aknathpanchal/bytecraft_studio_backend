@@ -35,9 +35,9 @@ const Product = require('../Models/Product');
 };
 
 // Edit artist details
-
-  const artistdetails= async (req, res) => {
+const artistdetails = async (req, res) => {
   try {
+    console.log("Request Body:", req.body); // Add this
     const artist = await User.findById(req.params.id);
     if (!artist) {
       return res.status(404).json({ message: 'Artist not found' });
@@ -48,11 +48,13 @@ const Product = require('../Models/Product');
 
     // Update the artist's details with the request body
     const updatedArtist = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    console.log("Updated Artist:", updatedArtist); // Add this
     res.json(updatedArtist);
   } catch (error) {
     res.status(500).json({ message: 'Error updating artist', error: error.message });
   }
 };
+
 
 // Delete an artist
 

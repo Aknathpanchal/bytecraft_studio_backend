@@ -10,7 +10,8 @@ const authMiddleware = require("../Middlewares/authMiddleware");
 
 module.exports = router;
 router.delete('/artists/:id',deleteartist,authMiddleware) 
-router.put('/artists/:id',artistdetails,authMiddleware)
+router.put('/update-artists/:id', authMiddleware, artistdetails);
+
 router.get('/artists/:id',findartist,authMiddleware) 
 
 router.get('/artists',artists)
