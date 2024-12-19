@@ -1,33 +1,18 @@
 const User = require('../Models/usermode');
-const Buyer = require('../Models/Buyer');
 
-// Create a new buyer
-const createBuyer = async (req, res) => {
+// Get details of all buyers
+const getAllBuyers = async (req, res) => {
   try {
-    const { name, lastName, email, phone, password, wishlist, cart, orders } = req.body;
+    const buyers = await User.find({ role: 'buyer' }) // Assuming 'role' indicates the type of user
+      .populate('wishlist')
+      .populate('cart.product')
+      .populate('orders');
 
-    // Create the user
-    const user = new User({
-      name,
-      lastName,
-      email,
-      phone,
-      password,
-      userType: 'Buyer',
-      role: 'buyer',
-    });
-    await user.save();
+    if (buyers.length === 0) {
+      return res.status(404).json({ message: 'No buyers found' });
+    }
 
-    // Create the buyer record
-    const buyer = new Buyer({
-      user: user._id,
-      wishlist,
-      cart,
-      orders,
-    });
-    await buyer.save();
-
-    res.status(201).json({ message: 'Buyer created successfully', user, buyer });
+    res.status(200).json(buyers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -36,8 +21,7 @@ const createBuyer = async (req, res) => {
 // Get buyer details
 const getBuyer = async (req, res) => {
   try {
-    const buyer = await Buyer.findOne({ user: req.params.userId })
-      .populate('user')
+    const buyer = await User.findOne({ _id: req.params.userId, role: 'buyer' })
       .populate('wishlist')
       .populate('cart.product')
       .populate('orders');
@@ -58,21 +42,18 @@ const updateBuyer = async (req, res) => {
     const { userId } = req.params;
     const { name, email, wishlist, cart } = req.body;
 
-    // Update user
+    // Update user details
     const user = await User.findByIdAndUpdate(
       userId,
-      { name, email },
+      { name, email, wishlist, cart },
       { new: true }
     );
 
-    // Update buyer
-    const buyer = await Buyer.findOneAndUpdate(
-      { user: userId },
-      { wishlist, cart },
-      { new: true }
-    );
+    if (!user || user.role !== 'buyer') {
+      return res.status(404).json({ message: 'Buyer not found' });
+    }
 
-    res.status(200).json({ message: 'Buyer updated successfully', user, buyer });
+    res.status(200).json({ message: 'Buyer updated successfully', user });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -83,11 +64,12 @@ const deleteBuyer = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Delete buyer record
-    await Buyer.findOneAndDelete({ user: userId });
-
     // Delete user record
-    await User.findByIdAndDelete(userId);
+    const user = await User.findOneAndDelete({ _id: userId, role: 'buyer' });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Buyer not found' });
+    }
 
     res.status(200).json({ message: 'Buyer deleted successfully' });
   } catch (error) {
@@ -95,8 +77,10 @@ const deleteBuyer = async (req, res) => {
   }
 };
 
+
 module.exports = {
-  createBuyer,
+  getAllBuyers,
+  
   getBuyer,
   updateBuyer,
   deleteBuyer,
